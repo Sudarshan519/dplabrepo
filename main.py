@@ -45,23 +45,23 @@ html = f"""
 
 # Example data storage (simulated in-memory database)
 fake_items_db = [
-    {"item_id": "1", "name": "Item One"},
-    {"item_id": "2", "name": "Item Two"},
+    {"item_id": "1", "name": "Item One","created_by":""},
+    {"item_id": "2", "name": "Item Two","created_by":""},
 ]
 
 # Define a Pydantic model for item creation
 class Item(BaseModel):
     name: str
     description: str = None
-
+    created_by:str = None
 # GET endpoint to retrieve all items
 @app.get("/items/")
-async def read_items():
+async def read_items(current_user: User = Depends(get_current_user)):
     return fake_items_db
 
 # GET endpoint to retrieve a specific item by ID
 @app.get("/items/{item_id}")
-async def read_item(item_id: str):
+async def read_item(item_id: str,current_user: User = Depends(get_current_user)):
     for item in fake_items_db:
         if item["item_id"] == item_id:
             return item
@@ -69,14 +69,14 @@ async def read_item(item_id: str):
 
 # POST endpoint to create a new item
 @app.post("/items/")
-async def create_item(item: Item):
+async def create_item(item: Item,current_user: User = Depends(get_current_user)):
     new_item = {"item_id": str(len(fake_items_db) + 1), **item.dict()}
     fake_items_db.append(new_item)
     return new_item
 
 # PUT endpoint to update an existing item by ID
 @app.put("/items/{item_id}")
-async def update_item(item_id: str, item: Item):
+async def update_item(item_id: str, item: Item,current_user: User = Depends(get_current_user)):
     for i, db_item in enumerate(fake_items_db):
         if db_item["item_id"] == item_id:
             fake_items_db[i] = {"item_id": item_id, **item.dict()}
@@ -85,7 +85,7 @@ async def update_item(item_id: str, item: Item):
 
 # DELETE endpoint to delete an item by ID
 @app.delete("/items/{item_id}")
-async def delete_item(item_id: str):
+async def delete_item(item_id: str,current_user: User = Depends(get_current_user)):
     for i, db_item in enumerate(fake_items_db):
         if db_item["item_id"] == item_id:
             del fake_items_db[i]
@@ -94,7 +94,7 @@ async def delete_item(item_id: str):
 
 # Example of a query parameter endpoint
 @app.get("/items_by_name/")
-async def read_item_by_name(name: str = Query(..., min_length=3, max_length=50)):
+async def read_item_by_name(name: str = Query(..., min_length=3, max_length=50),current_user: User = Depends(get_current_user)):
     result = [item for item in fake_items_db if name.lower() in item["name"].lower()]
     return result
 
